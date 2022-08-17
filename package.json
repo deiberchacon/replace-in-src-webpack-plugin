@@ -1,6 +1,6 @@
 {
-  "name": "replace-in-file-webpack-plugin",
-  "version": "1.0.6",
+  "name": "replace-in-src-webpack-plugin",
+  "version": "2.0.0",
   "description": "A webpack plugin to replace strings in file(s) after building",
   "main": "index.js",
   "scripts": {
@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/oyslin/replace-in-file-webpack-plugin.git"
+    "url": "git+https://github.com/deiberchacon/replace-in-src-webpack-plugin.git"
   },
   "keywords": [
     "webpack",
@@ -17,12 +17,12 @@
     "file"
   ],
   "author": {
-    "name": "Walt Ouyang",
-    "email": "oyslin@163.com"
+    "name": "Deiber Chacon",
+    "email": "deiberchacon@gmail.com"
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/oyslin/replace-in-file-webpack-plugin/issues"
+    "url": "https://github.com/deiberchacon/replace-in-src-webpack-plugin/issues"
   },
-  "homepage": "https://github.com/oyslin/replace-in-file-webpack-plugin#readme"
+  "homepage": "https://github.com/deiberchacon/replace-in-src-webpack-plugin#readme"
 }

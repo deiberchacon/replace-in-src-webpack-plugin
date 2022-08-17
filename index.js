@@ -1,92 +1,91 @@
-'use strict';
-
+const pluginName = 'ReplaceInSrcWebpackPlugin';
 const path = require('path');
 const fs = require('fs');
 
-function getAllFiles(root) {
-	var res = [],
-		files = fs.readdirSync(root);
-	files.forEach(function (file) {
-		var pathname = root + '/' + file,
-			stat = fs.lstatSync(pathname);
-
-		if (!stat.isDirectory()) {
-			res.push(pathname);
-		} else {
-			res = res.concat(getAllFiles(pathname));
+class ReplaceInSrcWebpackPlugin {
+	constructor(options) {
+		if (typeof options !== 'object') {
+			throw new Error('"options" must be an object.');
 		}
-	});
-	return res
-}
 
-function replace(file, rules) {
-	const src = path.resolve(file);
-	let template = fs.readFileSync(src, 'utf8');
+		this.options = options;
+		this.apply = this.apply.bind(this);
+	}
 
-	template = rules.reduce(
-		(template, rule) => template.replace(
-			rule.search, (typeof rule.replace === 'string' ? rule.replace : rule.replace.bind(global))
-		),
-		template
-	);
+	apply(compiler) {
+		compiler.hooks.done.tap(pluginName, () => {
+			const output = compiler.outputPath;
 
-	fs.writeFileSync(src, template);
-}
+			this.options.forEach(option => {
+				const dir = option.dir || output;
 
-function ReplaceInFilePlugin(options = []) {
-	this.options = options;
-};
-
-ReplaceInFilePlugin.prototype.apply = function (compiler) {
-	const root = compiler.options.context;
-	const done = (statsData) => {
-		if (statsData.hasErrors()) {
-			return
-		}
-		this.options.forEach(option => {
-			const dir = option.dir || root;
-			const files = option.files;
-
-			if(option.files){
-				const files = option.files;
-				if(Array.isArray(files) && files.length) {
-					files.forEach(file => {
-						replace(path.resolve(dir, file), option.rules);
-					})
-				}
-			} else if (option.test) {
-				const test = option.test;
-				const testArray = Array.isArray(test) ? test : [test];
-				const files = getAllFiles(dir);
-
-				files.forEach(file => {
-					const match = testArray.some((test, index, array) => {
-						return test.test(file);
-					})
-
-					if (!match) {
-						return;
+				if (option.files) {
+					const files = option.files;
+					if (Array.isArray(files) && files.length) {
+						files.forEach(file => {
+							this.replace(path.resolve(dir, file), option.rules);
+						})
 					}
+				} else if (option.test) {
+					const test = option.test;
+					const testArray = Array.isArray(test) ? test : [test];
+					const files = this.getAllFiles(dir);
 
-					replace(file, option.rules);
-				})
+					files.forEach(file => {
+						const match = testArray.some(test => {
+							return test.test(file);
+						})
+
+						if (!match) {
+							return;
+						}
+
+						this.replace(file, option.rules);
+					})
+				} else {
+					const files = this.getAllFiles(dir);
+					files.forEach(file => {
+						this.replace(file, option.rules);
+					});
+				}
+			});
+		});
+	}
+
+	getAllFiles(dir) {
+		const files = fs.readdirSync(dir);
+		let res = [];
+
+		files.forEach(file => {
+			const pathname = dir + '/' + file,
+				stat = fs.lstatSync(pathname);
+
+			if (!stat.isDirectory()) {
+				res.push(pathname);
 			} else {
-				const files = getAllFiles(dir);
-				files.forEach(file => {
-					replace(file, option.rules);
-				})
+				res = res.concat(getAllFiles(pathname));
 			}
-		})
+		});
+
+		return res
 	}
 
-	if (compiler.hooks) {
-		const plugin = {
-			name: "ReplaceInFilePlugin"
-		};
-		compiler.hooks.done.tap(plugin, done);
-	} else {
-		compiler.plugin('done', done);
-	}
-};
+	replace(file, rules) {
+		const src = path.resolve(file);
+		let template = fs.readFileSync(src, 'utf8');
 
-module.exports = ReplaceInFilePlugin;
+		template = rules.reduce(
+			(template, rule) => template.replace(
+				rule.search,
+				(typeof rule.replace === 'string'
+					? rule.replace
+					: rule.replace.bind({ file: path.basename(file) }))
+			),
+			template
+		);
+
+		fs.writeFileSync(src, template);
+	}
+}
+
+module.exports = ReplaceInSrcWebpackPlugin;
