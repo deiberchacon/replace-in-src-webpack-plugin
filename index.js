@@ -14,41 +14,45 @@ class ReplaceInSrcWebpackPlugin {
 
 	apply(compiler) {
 		compiler.hooks.done.tap(pluginName, () => {
-			const output = compiler.outputPath;
+			try {
+				const output = compiler.outputPath;
 
-			this.options.forEach(option => {
-				const dir = option.dir || output;
+				this.options.forEach(option => {
+					const dir = option.dir || output;
 
-				if (option.files) {
-					const files = option.files;
-					if (Array.isArray(files) && files.length) {
-						files.forEach(file => {
-							this.replace(path.resolve(dir, file), option.rules);
-						})
-					}
-				} else if (option.test) {
-					const test = option.test;
-					const testArray = Array.isArray(test) ? test : [test];
-					const files = this.getAllFiles(dir);
-
-					files.forEach(file => {
-						const match = testArray.some(test => {
-							return test.test(file);
-						})
-
-						if (!match) {
-							return;
+					if (option.files) {
+						const files = option.files;
+						if (Array.isArray(files) && files.length) {
+							files.forEach(file => {
+								this.replace(path.resolve(dir, file), option.rules);
+							})
 						}
+					} else if (option.test) {
+						const test = option.test;
+						const testArray = Array.isArray(test) ? test : [test];
+						const files = this.getAllFiles(dir);
 
-						this.replace(file, option.rules);
-					})
-				} else {
-					const files = this.getAllFiles(dir);
-					files.forEach(file => {
-						this.replace(file, option.rules);
-					});
-				}
-			});
+						files.forEach(file => {
+							const match = testArray.some(test => {
+								return test.test(file);
+							})
+
+							if (!match) {
+								return;
+							}
+
+							this.replace(file, option.rules);
+						})
+					} else {
+						const files = this.getAllFiles(dir);
+						files.forEach(file => {
+							this.replace(file, option.rules);
+						});
+					}
+				});
+			} catch (e) {
+        console.log(`${pluginName} - > error`, e);
+      }
 		});
 	}
 
